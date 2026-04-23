@@ -8,6 +8,7 @@ use serde::Serialize;
 #[derive(Debug)]
 pub enum ApiError {
     BadRequest(String),
+    UnprocessableEntity(String),
     NotFound(String),
     Conflict(String),
     Database(sqlx::Error),
@@ -27,6 +28,7 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
+            Self::UnprocessableEntity(message) => (StatusCode::UNPROCESSABLE_ENTITY, message),
             Self::NotFound(message) => (StatusCode::NOT_FOUND, message),
             Self::Conflict(message) => (StatusCode::CONFLICT, message),
             Self::Database(error) => (

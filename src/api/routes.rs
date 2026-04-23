@@ -50,25 +50,29 @@ async fn create_todo(
     State(pool): State<PgPool>,
     Json(payload): Json<CreateTodoRequest>,
 ) -> Result<(StatusCode, Json<TodoDto>), ApiError> {
+    let payload = payload.validated()?;
     let todo = repo::create(&pool, &payload.title, payload.position).await?;
 
     Ok((StatusCode::CREATED, Json(TodoDto::from(todo))))
 }
 
 async fn update_todo(
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     State(pool): State<PgPool>,
     Json(payload): Json<UpdateTodoRequest>,
 ) -> Result<Json<TodoDto>, ApiError> {
+    let id = parse_todo_id(&id)?;
+
     if payload.position.is_some() {
         return Err(ApiError::BadRequest(
             "position updates are not supported by this endpoint".to_string(),
         ));
     }
 
+    let title = payload.validated_title()?;
     let mut updated_todo = None;
 
-    if let Some(title) = payload.title.as_deref() {
+    if let Some(title) = title.as_deref() {
         updated_todo = Some(
             repo::update_title(&pool, id, title)
                 .await?
@@ -92,9 +96,11 @@ async fn update_todo(
 }
 
 async fn delete_todo(
-    Path(id): Path<i64>,
+    Path(id): Path<String>,
     State(pool): State<PgPool>,
 ) -> Result<StatusCode, ApiError> {
+    let id = parse_todo_id(&id)?;
+
     if repo::delete(&pool, id).await? {
         Ok(StatusCode::NO_CONTENT)
     } else {
@@ -134,4 +140,10 @@ async fn filtered_todos(
         })
         .map(TodoDto::from)
         .collect())
+}
+
+fn parse_todo_id(raw_id: &str) -> Result<i64, ApiError> {
+    raw_id
+        .parse::<i64>()
+        .map_err(|_| ApiError::BadRequest("invalid todo id".to_string()))
 }
