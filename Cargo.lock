@@ -1525,6 +1525,7 @@ name = "pgtest002"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "dotenvy",
  "leptos",
  "leptos_axum",
  "serde",
