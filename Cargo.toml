@@ -1,0 +1,47 @@
+[package]
+name = "pgtest002"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "pgtest002"
+path = "src/main.rs"
+required-features = ["ssr"]
+
+[features]
+default = ["ssr"]
+hydrate = ["leptos/hydrate"]
+ssr = [
+    "dep:axum",
+    "dep:leptos_axum",
+    "dep:sqlx",
+    "dep:tokio",
+    "dep:tracing",
+    "leptos/ssr",
+]
+
+[dependencies]
+axum = { version = "0.8", optional = true }
+leptos = { version = "0.8.19", default-features = false }
+leptos_axum = { version = "0.8.9", optional = true }
+serde = { version = "1", features = ["derive"] }
+sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio-rustls"], optional = true }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal"], optional = true }
+tracing = { version = "0.1", optional = true }
+
+[package.metadata.leptos]
+output-name = "pgtest002"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+assets-dir = "public"
+site-addr = "0.0.0.0:8080"
+reload-port = 3001
+browserquery = "defaults"
+env = "DEV"
+bin-features = ["ssr"]
+lib-features = ["hydrate"]
+bin-default-features = false
+lib-default-features = false
