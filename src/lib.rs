@@ -1,5 +1,9 @@
 use leptos::prelude::*;
 
+pub mod components {
+    pub mod header;
+}
+
 #[cfg(feature = "ssr")]
 pub mod api;
 
