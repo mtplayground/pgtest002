@@ -65,3 +65,51 @@ pub async fn set_completed(
         ))
     }
 }
+
+#[server(UpdateTitle, "/api")]
+pub async fn update_title(
+    id: i64,
+    title: String,
+) -> Result<Option<TodoDto>, ServerFnError<String>> {
+    let title = title.trim().to_string();
+
+    #[cfg(feature = "ssr")]
+    {
+        use crate::{state::AppState, todos::repo};
+
+        let state = use_context::<AppState>()
+            .ok_or_else(|| ServerFnError::ServerError("missing app state".to_string()))?;
+
+        if title.is_empty() {
+            let deleted = repo::delete(&state.pool, id)
+                .await
+                .map_err(|error| ServerFnError::ServerError(error.to_string()))?;
+
+            if !deleted {
+                return Err(ServerFnError::ServerError(format!(
+                    "todo with id {id} was not found"
+                )));
+            }
+
+            return Ok(None);
+        }
+
+        let todo = repo::update_title(&state.pool, id, &title)
+            .await
+            .map_err(|error| ServerFnError::ServerError(error.to_string()))?;
+
+        let todo = todo.ok_or_else(|| {
+            ServerFnError::ServerError(format!("todo with id {id} was not found"))
+        })?;
+
+        Ok(Some(TodoDto::from(todo)))
+    }
+
+    #[cfg(not(feature = "ssr"))]
+    {
+        let _ = (id, title);
+        Err(ServerFnError::ServerError(
+            "update_title server function can only run on the server".to_string(),
+        ))
+    }
+}
