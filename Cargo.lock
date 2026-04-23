@@ -1655,8 +1655,10 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "serde",
+ "serde_json",
  "sqlx",
  "tokio",
+ "tower",
  "tracing",
 ]
 
