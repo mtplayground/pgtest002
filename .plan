@@ -1,0 +1,108 @@
+Architecture plan for `mtplayground/pgtest002`
+
+Goal
+Build a TodoMVC-style app in Rust using Leptos for the UI, Axum for HTTP serving/API routing, PostgreSQL for persistence, and `cargo-leptos` for the full-stack development workflow.
+
+Module structure and file organization
+
+- `Cargo.toml`
+  Define workspace/package metadata and dependencies for Leptos, Axum, Tokio, SQLx, Serde, validation, tracing, dotenvy, and test tooling.
+- `src/main.rs`
+  Bootstrap env loading, tracing, database pool creation, router construction, and server startup.
+- `src/lib.rs`
+  Shared crate exports used by server and Leptos app code.
+- `src/app.rs`
+  Root Leptos app, top-level router, layout, and route mounting.
+- `src/components/`
+  UI components split by responsibility:
+  `header.rs`, `todo_list.rs`, `todo_item.rs`, `footer.rs`.
+- `src/pages/` or route-local modules if needed
+  Route composition for active/completed/all filters if the app grows beyond `app.rs`.
+- `src/server/`
+  Server-side modules:
+  `state.rs` for app state,
+  `error.rs` for shared error mapping,
+  `dto.rs` for API payloads,
+  `routes.rs` for Axum router assembly,
+  `handlers/todos.rs` for REST endpoints,
+  `functions/todos.rs` for Leptos server functions where UI actions should not go through bespoke client fetch code.
+- `src/repository/`
+  `mod.rs` plus `todos.rs` containing SQLx-backed repository functions. Keep repository APIs framework-agnostic and expressed in domain terms.
+- `src/domain/`
+  `todo.rs` with core domain structs shared across repository, handlers, and UI mapping where appropriate.
+- `migrations/`
+  SQLx migrations beginning with the `todos` table creation.
+- `style/` or `public/`
+  Official TodoMVC CSS and any static assets required by Leptos/Axum serving.
+- `tests/`
+  Integration tests for repository and API behavior. Prefer separate files like `repository_todos.rs` and `api_todos.rs`.
+- `.env.example`
+  Declare required runtime variables such as `DATABASE_URL`, host, and port-related settings.
+- `docker-compose.yml`, `Dockerfile`
+  Local Postgres + app workflow and production container build.
+
+Shared types
+
+- `domain::todo::Todo`
+  Canonical todo record with `id`, `title`, `completed`, `created_at`, `updated_at`.
+- DTOs in `server::dto`
+  `CreateTodoRequest`, `UpdateTodoRequest`, `BulkUpdateRequest`, `TodoResponse`, `ListTodosResponse`.
+- `server::state::AppState`
+  Holds `PgPool` and any shared configuration.
+- `server::error::AppError`
+  Central error enum that maps validation, not-found, database, and internal failures into HTTP responses and server-function errors.
+- Filter type
+  A shared enum such as `TodoFilter::{All, Active, Completed}` used by router/UI and optionally repository query shaping.
+
+Key design decisions
+
+- Keep the repository layer isolated from Axum and Leptos. Handlers and server functions should call the same repository APIs.
+- Use SQLx with compile-time query checking from the start to avoid later rewrites. This implies stable env handling and migration flow early.
+- Use REST endpoints for explicit API coverage and integration tests, while allowing Leptos server functions to wrap those same repository operations for UI actions.
+- Centralize validation rules in request DTO conversion or dedicated validators so UI/server/API behavior stays aligned.
+- Use a single `AppState` cloned into Axum and any Leptos server context to avoid divergent database initialization paths.
+- Adopt structured logging with `tracing` early enough that later operational work does not require broad refactors.
+- Prefer a small number of stable domain/data types over duplicating structs per layer.
+
+Issue dependency order
+
+- Foundation:
+  #1 Cargo project
+  #2 minimal Leptos + Axum serving
+  #3 env loading
+  #4 Docker/docker-compose
+  #5 README baseline
+- Backend core:
+  #6 Postgres pool and app state
+  #7 migration
+  #8 repository
+  #9 DTOs and error type
+  #10 list/create endpoints
+  #11 update/delete/bulk endpoints
+  #12 request validation
+- Frontend foundation:
+  #13 TodoMVC CSS
+  #14 router + filter routes
+  #15 header component
+  #16 todo list/item read-only
+  #17 footer component
+- Full-stack interactions:
+  #18 add todo
+  #19 toggle completion
+  #20 edit in place
+  #21 delete todo
+  #22 toggle-all and clear-completed
+- Hardening:
+  #23 integration tests
+  #24 structured logging and error handling review
+  #25 spec conformance checklist
+  #26 production Docker validation and README polish
+
+Cross-issue notes
+
+- #3 should define env names that are reused unchanged by #4, #5, #6, #23, and #26.
+- #6, #7, and #8 should be designed together because SQLx compile-time checking depends on schema stability and database configuration.
+- #9 should establish error and DTO conventions before the API surface expands in #10 through #12.
+- #14 should introduce the filter representation expected later by #16 and #17 to avoid rerouting churn.
+- #18 through #22 should reuse repository operations from #8 and error handling from #9 rather than embedding UI-specific persistence logic.
+- #23 should validate the repository and API contracts already defined by #8 through #12 before final polishing in #24 through #26.
