@@ -1,9 +1,12 @@
 use leptos::config::LeptosOptions;
 use leptos::hydration::{AutoReload, HydrationScripts};
 use leptos::prelude::*;
+use leptos_meta::{Stylesheet, provide_meta_context};
 
 #[component]
 pub fn App() -> impl IntoView {
+    provide_meta_context();
+
     view! {
         <main class="todoapp">
             <header class="header">
@@ -28,6 +31,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta charset="utf-8" />
                 <meta content="width=device-width, initial-scale=1" name="viewport" />
                 <meta content="A TodoMVC shell rendered by Leptos and served by Axum." name="description" />
+                <Stylesheet href="/assets/todomvc.css" id="todomvc-css" />
                 <AutoReload options=options.clone() />
                 <HydrationScripts options />
                 <title>"pgtest002"</title>
