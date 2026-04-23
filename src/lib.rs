@@ -2,6 +2,8 @@ use leptos::prelude::*;
 
 pub mod components {
     pub mod header;
+    pub mod todo_item;
+    pub mod todo_list;
 }
 
 #[cfg(feature = "ssr")]
