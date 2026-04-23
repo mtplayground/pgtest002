@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::Serialize;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -13,6 +14,19 @@ pub enum ApiError {
     Conflict(String),
     Database(sqlx::Error),
     Internal(String),
+}
+
+impl fmt::Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::BadRequest(message)
+            | Self::UnprocessableEntity(message)
+            | Self::NotFound(message)
+            | Self::Conflict(message)
+            | Self::Internal(message) => f.write_str(message),
+            Self::Database(error) => write!(f, "database error: {error}"),
+        }
+    }
 }
 
 impl From<sqlx::Error> for ApiError {

@@ -7,8 +7,9 @@ pub mod components {
     pub mod todo_list;
 }
 
-#[cfg(feature = "ssr")]
 pub mod api;
+
+pub mod server_fns;
 
 #[cfg(feature = "ssr")]
 pub mod state;
