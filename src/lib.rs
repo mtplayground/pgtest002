@@ -1,10 +1,10 @@
 use leptos::prelude::*;
 
 #[cfg(feature = "ssr")]
-pub mod api {
-    pub mod dto;
-    pub mod error;
-}
+pub mod api;
+
+#[cfg(feature = "ssr")]
+pub mod state;
 
 #[cfg(feature = "ssr")]
 pub mod todos {

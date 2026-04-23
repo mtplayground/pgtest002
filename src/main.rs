@@ -4,8 +4,6 @@ mod app;
 mod config;
 #[cfg(feature = "ssr")]
 mod db;
-#[cfg(feature = "ssr")]
-mod state;
 
 #[cfg(feature = "ssr")]
 use axum::Router;
@@ -24,7 +22,7 @@ use crate::config::Config;
 #[cfg(feature = "ssr")]
 use crate::db::create_pool;
 #[cfg(feature = "ssr")]
-use crate::state::AppState;
+use pgtest002::{api::routes::router as api_router, state::AppState};
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
@@ -39,6 +37,7 @@ async fn main() -> Result<(), std::io::Error> {
     let routes = generate_route_list(App);
 
     let app = Router::<AppState>::new()
+        .nest("/api", api_router())
         .leptos_routes(
             &state,
             routes,
