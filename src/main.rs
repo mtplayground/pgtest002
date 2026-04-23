@@ -4,9 +4,11 @@ mod app;
 mod config;
 #[cfg(feature = "ssr")]
 mod db;
+#[cfg(feature = "ssr")]
+mod logging;
 
 #[cfg(feature = "ssr")]
-use axum::Router;
+use axum::{Router, middleware};
 
 #[cfg(feature = "ssr")]
 use leptos::config::LeptosOptions;
@@ -27,6 +29,9 @@ use pgtest002::{api::routes::router as api_router, state::AppState};
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
+    logging::init_tracing()
+        .map_err(|error| std::io::Error::other(format!("failed to initialize tracing: {error}")))?;
+
     let config =
         Config::from_env().map_err(|error| std::io::Error::other(error.to_string()))?;
     let leptos_options: LeptosOptions = axum::extract::FromRef::from_ref(&config);
@@ -47,6 +52,7 @@ async fn main() -> Result<(), std::io::Error> {
             },
         )
         .fallback(file_and_error_handler::<AppState, _>(shell))
+        .layer(middleware::from_fn(logging::request_span))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(config.listen_addr()).await?;
