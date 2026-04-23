@@ -2,24 +2,33 @@ use leptos::config::LeptosOptions;
 use leptos::hydration::{AutoReload, HydrationScripts};
 use leptos::prelude::*;
 use leptos_meta::{Stylesheet, provide_meta_context};
+use leptos_router::components::Router;
+
+#[path = "routes.rs"]
+mod routes;
 
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+    let (filter, set_filter) = signal(routes::TodoFilter::All);
+    routes::provide_todo_filter_signal(filter);
 
     view! {
-        <main class="todoapp">
-            <header class="header">
-                <h1>"todos"</h1>
-                <input
-                    aria-label="Create a new todo"
-                    autofocus
-                    class="new-todo"
-                    placeholder="What needs to be done?"
-                    type="text"
-                />
-            </header>
-        </main>
+        <Router>
+            <main class="todoapp" data-filter=move || filter.get().as_str()>
+                <header class="header">
+                    <h1>"todos"</h1>
+                    <input
+                        aria-label="Create a new todo"
+                        autofocus
+                        class="new-todo"
+                        placeholder="What needs to be done?"
+                        type="text"
+                    />
+                </header>
+                <routes::FilterRoutes set_filter />
+            </main>
+        </Router>
     }
 }
 
