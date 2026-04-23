@@ -9,7 +9,9 @@ RUN apt-get update \
 
 WORKDIR /app
 
+COPY Cargo.toml ./Cargo.toml
 COPY target/release/pgtest002 /usr/local/bin/pgtest002
+COPY --chown=appuser:appuser .env ./.env
 COPY --chown=appuser:appuser target/site ./target/site
 
 ENV HOST=0.0.0.0
