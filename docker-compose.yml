@@ -7,27 +7,29 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      HOST: 0.0.0.0
-      PORT: 8080
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pgtest002
-      LEPTOS_SITE_ADDR: 0.0.0.0:8080
-      LEPTOS_SITE_ROOT: target/site
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-8080}
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-pgtest002}}
+      LEPTOS_SITE_ADDR: ${LEPTOS_SITE_ADDR:-0.0.0.0:8080}
+      LEPTOS_SITE_ROOT: ${LEPTOS_SITE_ROOT:-target/site}
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
+    restart: unless-stopped
 
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: pgtest002
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-pgtest002}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d pgtest002"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-pgtest002}"]
       interval: 5s
       timeout: 5s
       retries: 10
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
