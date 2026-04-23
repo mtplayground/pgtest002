@@ -2,7 +2,7 @@ use leptos::{html, prelude::*};
 
 use crate::{
     api::dto::TodoDto,
-    server_fns::{SetCompleted, UpdateTitle},
+    server_fns::{DeleteTodo, SetCompleted, UpdateTitle},
 };
 
 #[component]
@@ -18,6 +18,8 @@ pub fn TodoItem(
     let set_completed_value = set_completed_action.value();
     let update_title_action = ServerAction::<UpdateTitle>::new();
     let update_title_value = update_title_action.value();
+    let delete_todo_action = ServerAction::<DeleteTodo>::new();
+    let delete_todo_value = delete_todo_action.value();
     let invalidate_todos = StoredValue::new(invalidate_todos);
     let id = todo.id;
     let edit_input_ref = NodeRef::<html::Input>::new();
@@ -45,6 +47,16 @@ pub fn TodoItem(
             if let Some(todo) = updated_todo {
                 set_draft_title.set(todo.title);
             }
+
+            if let Some(callback) = invalidate_todos.get_value() {
+                callback.run(());
+            }
+        }
+    });
+
+    Effect::new(move |_| {
+        if matches!(delete_todo_value.get(), Some(Ok(()))) {
+            set_is_editing.set(false);
 
             if let Some(callback) = invalidate_todos.get_value() {
                 callback.run(());
@@ -83,7 +95,9 @@ pub fn TodoItem(
                     checked=todo.completed
                     class="toggle"
                     disabled=move || {
-                        set_completed_action.pending().get() || update_title_action.pending().get()
+                        set_completed_action.pending().get()
+                            || update_title_action.pending().get()
+                            || delete_todo_action.pending().get()
                     }
                     on:change=move |event| {
                         set_completed_action.dispatch(SetCompleted {
@@ -100,13 +114,22 @@ pub fn TodoItem(
                 <button
                     aria-label=destroy_label
                     class="destroy"
-                    disabled
+                    disabled=move || {
+                        set_completed_action.pending().get()
+                            || update_title_action.pending().get()
+                            || delete_todo_action.pending().get()
+                    }
+                    on:click=move |_| {
+                        delete_todo_action.dispatch(DeleteTodo { id });
+                    }
                     type="button"
                 ></button>
             </div>
             <input
                 class="edit"
-                disabled=move || update_title_action.pending().get()
+                disabled=move || {
+                    update_title_action.pending().get() || delete_todo_action.pending().get()
+                }
                 node_ref=edit_input_ref
                 on:input=move |event| set_draft_title.set(event_target_value(&event))
                 on:keydown=move |event| match event.key().as_str() {
