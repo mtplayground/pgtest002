@@ -113,3 +113,34 @@ pub async fn update_title(
         ))
     }
 }
+
+#[server(DeleteTodo, "/api")]
+pub async fn delete_todo(id: i64) -> Result<(), ServerFnError<String>> {
+    #[cfg(feature = "ssr")]
+    {
+        use crate::{state::AppState, todos::repo};
+
+        let state = use_context::<AppState>()
+            .ok_or_else(|| ServerFnError::ServerError("missing app state".to_string()))?;
+
+        let deleted = repo::delete(&state.pool, id)
+            .await
+            .map_err(|error| ServerFnError::ServerError(error.to_string()))?;
+
+        if !deleted {
+            return Err(ServerFnError::ServerError(format!(
+                "todo with id {id} was not found"
+            )));
+        }
+
+        Ok(())
+    }
+
+    #[cfg(not(feature = "ssr"))]
+    {
+        let _ = id;
+        Err(ServerFnError::ServerError(
+            "delete_todo server function can only run on the server".to_string(),
+        ))
+    }
+}
