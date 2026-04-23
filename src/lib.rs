@@ -1,5 +1,10 @@
 use leptos::prelude::*;
 
+pub mod todos {
+    pub mod model;
+    pub mod repo;
+}
+
 #[component]
 pub fn App() -> impl IntoView {
     view! {
