@@ -144,3 +144,52 @@ pub async fn delete_todo(id: i64) -> Result<(), ServerFnError<String>> {
         ))
     }
 }
+
+#[server(ToggleAll, "/api")]
+pub async fn toggle_all(completed: bool) -> Result<(), ServerFnError<String>> {
+    #[cfg(feature = "ssr")]
+    {
+        use crate::{state::AppState, todos::repo};
+
+        let state = use_context::<AppState>()
+            .ok_or_else(|| ServerFnError::ServerError("missing app state".to_string()))?;
+
+        repo::toggle_all(&state.pool, completed)
+            .await
+            .map_err(|error| ServerFnError::ServerError(error.to_string()))?;
+
+        Ok(())
+    }
+
+    #[cfg(not(feature = "ssr"))]
+    {
+        let _ = completed;
+        Err(ServerFnError::ServerError(
+            "toggle_all server function can only run on the server".to_string(),
+        ))
+    }
+}
+
+#[server(ClearCompleted, "/api")]
+pub async fn clear_completed() -> Result<(), ServerFnError<String>> {
+    #[cfg(feature = "ssr")]
+    {
+        use crate::{state::AppState, todos::repo};
+
+        let state = use_context::<AppState>()
+            .ok_or_else(|| ServerFnError::ServerError("missing app state".to_string()))?;
+
+        repo::clear_completed(&state.pool)
+            .await
+            .map_err(|error| ServerFnError::ServerError(error.to_string()))?;
+
+        Ok(())
+    }
+
+    #[cfg(not(feature = "ssr"))]
+    {
+        Err(ServerFnError::ServerError(
+            "clear_completed server function can only run on the server".to_string(),
+        ))
+    }
+}
