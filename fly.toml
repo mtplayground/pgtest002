@@ -1,0 +1,11 @@
+app = "pgtest002-e54fd1"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_start = true
+  auto_stop = "stop"

@@ -46,6 +46,7 @@ cargo leptos watch
 ```
 
 The application listens on `0.0.0.0:8080`. In the current config, Leptos writes generated assets to `target/site`.
+On startup, the server applies the checked-in SQL migrations automatically before serving requests.
 
 If you want to verify the SSR binary without the watcher, run:
 
@@ -59,6 +60,7 @@ The repository includes:
 
 - `Dockerfile`: a multi-stage container build that uses `cargo-leptos` in the builder stage and copies the compiled binary plus `target/site` into a slim runtime image.
 - `docker-compose.yml`: starts the application and PostgreSQL together, with a named `postgres_data` volume for database persistence and environment-variable overrides for ports and database settings.
+- The server automatically applies `migrations/` during startup, so a fresh Postgres container can bootstrap itself without a separate migration step.
 
 Start the full stack with:
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::error::ApiError;
+#[cfg(feature = "ssr")]
 use crate::todos::model::Todo;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -11,6 +11,7 @@ pub struct TodoDto {
     pub position: Option<i64>,
 }
 
+#[cfg(feature = "ssr")]
 impl From<Todo> for TodoDto {
     fn from(todo: Todo) -> Self {
         Self {
@@ -29,13 +30,11 @@ pub struct CreateTodoRequest {
 }
 
 impl CreateTodoRequest {
-    pub fn validated(self) -> Result<Self, ApiError> {
+    pub fn validated(self) -> Result<Self, String> {
         let title = self.title.trim().to_string();
 
         if title.is_empty() {
-            return Err(ApiError::UnprocessableEntity(
-                "title must not be empty".to_string(),
-            ));
+            return Err("title must not be empty".to_string());
         }
 
         Ok(Self {
@@ -53,15 +52,13 @@ pub struct UpdateTodoRequest {
 }
 
 impl UpdateTodoRequest {
-    pub fn validated_title(&self) -> Result<Option<String>, ApiError> {
+    pub fn validated_title(&self) -> Result<Option<String>, String> {
         match self.title.as_deref() {
             Some(title) => {
                 let title = title.trim().to_string();
 
                 if title.is_empty() {
-                    Err(ApiError::UnprocessableEntity(
-                        "title must not be empty".to_string(),
-                    ))
+                    Err("title must not be empty".to_string())
                 } else {
                     Ok(Some(title))
                 }

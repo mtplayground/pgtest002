@@ -1,6 +1,6 @@
-use sqlx::types::time::OffsetDateTime;
+use sqlx::{FromRow, types::time::OffsetDateTime};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, FromRow)]
 pub struct Todo {
     pub id: i64,
     pub title: String,

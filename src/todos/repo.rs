@@ -1,19 +1,17 @@
-use sqlx::PgPool;
-use sqlx::types::time::OffsetDateTime;
+use sqlx::{PgPool, query, query_as};
 
 use super::model::Todo;
 
 pub async fn list_all(pool: &PgPool) -> Result<Vec<Todo>, sqlx::Error> {
-    sqlx::query_as!(
-        Todo,
+    query_as::<_, Todo>(
         r#"
         SELECT
             id,
             title,
             completed,
             position,
-            created_at as "created_at!: OffsetDateTime",
-            updated_at as "updated_at!: OffsetDateTime"
+            created_at,
+            updated_at
         FROM todos
         ORDER BY position NULLS LAST, id ASC
         "#
@@ -27,8 +25,7 @@ pub async fn create(
     title: &str,
     position: Option<i64>,
 ) -> Result<Todo, sqlx::Error> {
-    sqlx::query_as!(
-        Todo,
+    query_as::<_, Todo>(
         r#"
         INSERT INTO todos (title, position)
         VALUES ($1, $2)
@@ -37,12 +34,12 @@ pub async fn create(
             title,
             completed,
             position,
-            created_at as "created_at!: OffsetDateTime",
-            updated_at as "updated_at!: OffsetDateTime"
-        "#,
-        title,
-        position
+            created_at,
+            updated_at
+        "#
     )
+    .bind(title)
+    .bind(position)
     .fetch_one(pool)
     .await
 }
@@ -52,8 +49,7 @@ pub async fn update_title(
     id: i64,
     title: &str,
 ) -> Result<Option<Todo>, sqlx::Error> {
-    sqlx::query_as!(
-        Todo,
+    query_as::<_, Todo>(
         r#"
         UPDATE todos
         SET title = $2,
@@ -64,12 +60,12 @@ pub async fn update_title(
             title,
             completed,
             position,
-            created_at as "created_at!: OffsetDateTime",
-            updated_at as "updated_at!: OffsetDateTime"
-        "#,
-        id,
-        title
+            created_at,
+            updated_at
+        "#
     )
+    .bind(id)
+    .bind(title)
     .fetch_optional(pool)
     .await
 }
@@ -79,8 +75,7 @@ pub async fn set_completed(
     id: i64,
     completed: bool,
 ) -> Result<Option<Todo>, sqlx::Error> {
-    sqlx::query_as!(
-        Todo,
+    query_as::<_, Todo>(
         r#"
         UPDATE todos
         SET completed = $2,
@@ -91,24 +86,24 @@ pub async fn set_completed(
             title,
             completed,
             position,
-            created_at as "created_at!: OffsetDateTime",
-            updated_at as "updated_at!: OffsetDateTime"
-        "#,
-        id,
-        completed
+            created_at,
+            updated_at
+        "#
     )
+    .bind(id)
+    .bind(completed)
     .fetch_optional(pool)
     .await
 }
 
 pub async fn delete(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
-    let result = sqlx::query!(
+    let result = query(
         r#"
         DELETE FROM todos
         WHERE id = $1
-        "#,
-        id
+        "#
     )
+    .bind(id)
     .execute(pool)
     .await?;
 
@@ -116,15 +111,15 @@ pub async fn delete(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
 }
 
 pub async fn toggle_all(pool: &PgPool, completed: bool) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query!(
+    let result = query(
         r#"
         UPDATE todos
         SET completed = $1,
             updated_at = NOW()
         WHERE completed IS DISTINCT FROM $1
-        "#,
-        completed
+        "#
     )
+    .bind(completed)
     .execute(pool)
     .await?;
 
@@ -132,7 +127,7 @@ pub async fn toggle_all(pool: &PgPool, completed: bool) -> Result<u64, sqlx::Err
 }
 
 pub async fn clear_completed(pool: &PgPool) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query!(
+    let result = query(
         r#"
         DELETE FROM todos
         WHERE completed = TRUE

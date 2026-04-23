@@ -1,6 +1,8 @@
 use leptos::prelude::*;
 
-use crate::api::dto::{CreateTodoRequest, TodoDto};
+use crate::api::dto::TodoDto;
+#[cfg(feature = "ssr")]
+use crate::api::dto::CreateTodoRequest;
 
 #[server(CreateTodo, "/api")]
 pub async fn create_todo(title: String) -> Result<TodoDto, ServerFnError<String>> {

@@ -50,7 +50,9 @@ async fn create_todo(
     State(pool): State<PgPool>,
     Json(payload): Json<CreateTodoRequest>,
 ) -> Result<(StatusCode, Json<TodoDto>), ApiError> {
-    let payload = payload.validated()?;
+    let payload = payload
+        .validated()
+        .map_err(ApiError::UnprocessableEntity)?;
     let todo = repo::create(&pool, &payload.title, payload.position).await?;
 
     Ok((StatusCode::CREATED, Json(TodoDto::from(todo))))
@@ -69,7 +71,9 @@ async fn update_todo(
         ));
     }
 
-    let title = payload.validated_title()?;
+    let title = payload
+        .validated_title()
+        .map_err(ApiError::UnprocessableEntity)?;
     let mut updated_todo = None;
 
     if let Some(title) = title.as_deref() {
