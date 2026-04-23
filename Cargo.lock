@@ -1652,6 +1652,7 @@ dependencies = [
  "dotenvy",
  "leptos",
  "leptos_axum",
+ "leptos_meta",
  "serde",
  "sqlx",
  "tokio",
