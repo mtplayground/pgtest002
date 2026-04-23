@@ -1,5 +1,12 @@
 use leptos::prelude::*;
 
+#[cfg(feature = "ssr")]
+pub mod api {
+    pub mod dto;
+    pub mod error;
+}
+
+#[cfg(feature = "ssr")]
 pub mod todos {
     pub mod model;
     pub mod repo;
