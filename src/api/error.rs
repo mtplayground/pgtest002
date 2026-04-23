@@ -40,19 +40,41 @@ impl From<sqlx::Error> for ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let (status, message) = match self {
-            Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
-            Self::UnprocessableEntity(message) => (StatusCode::UNPROCESSABLE_ENTITY, message),
-            Self::NotFound(message) => (StatusCode::NOT_FOUND, message),
-            Self::Conflict(message) => (StatusCode::CONFLICT, message),
-            Self::Database(error) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("database error: {error}"),
-            ),
-            Self::Internal(message) => (StatusCode::INTERNAL_SERVER_ERROR, message),
-        };
+        let status = self.status_code();
 
-        (status, Json(ErrorResponse { error: message })).into_response()
+        if status.is_server_error() {
+            tracing::error!(status = %status.as_u16(), error = %self, "api request failed");
+        }
+
+        (
+            status,
+            Json(ErrorResponse {
+                error: self.client_message(),
+            }),
+        )
+            .into_response()
+    }
+}
+
+impl ApiError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::BadRequest(_) => StatusCode::BAD_REQUEST,
+            Self::UnprocessableEntity(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            Self::NotFound(_) => StatusCode::NOT_FOUND,
+            Self::Conflict(_) => StatusCode::CONFLICT,
+            Self::Database(_) | Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn client_message(&self) -> String {
+        match self {
+            Self::BadRequest(message)
+            | Self::UnprocessableEntity(message)
+            | Self::NotFound(message)
+            | Self::Conflict(message) => message.clone(),
+            Self::Database(_) | Self::Internal(_) => "internal server error".to_string(),
+        }
     }
 }
 
